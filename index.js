@@ -6,6 +6,7 @@ import multer from "multer";
 
 import feedRoutes from "./routes/feed.js";
 import authRoutes from "./routes/auth.js";
+import socket from "./utils/socket.js";
 
 (async () => {
   try {
@@ -75,6 +76,11 @@ app.use((error, req, res, next) => {
 app.use("/feed", feedRoutes(router));
 app.use("/auth", authRoutes(router));
 
-app.listen(8080, () => {
+const server = app.listen(8080, () => {
   console.log("http://localhost:8080");
+});
+
+const io = socket.init(server);
+io.on("connection", (socket) => {
+  console.log("Client connected");
 });

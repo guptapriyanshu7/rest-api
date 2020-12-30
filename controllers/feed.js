@@ -5,6 +5,7 @@ import { validationResult } from "express-validator";
 
 import Post from "../models/post.js";
 import User from "../models/user.js";
+import socket from "../utils/socket.js";
 
 const __dirname = path.resolve();
 const clearImage = (imageUrl) => {
@@ -24,6 +25,7 @@ export default {
       const totalItems = await Post.find().countDocuments();
       const posts = await Post.find()
         .populate("creator", "name")
+        .sort({ createdAt: -1 })
         .skip((currentPage - 1) * perPage)
         .limit(perPage);
       res.status(200).json({
@@ -65,6 +67,10 @@ export default {
       const user = await User.findById(creator);
       user.posts.push(post);
       await user.save();
+      socket.getIO().emit("posts", {
+        action: "create",
+        post: { ...post._doc, creator: { _id: creator, name: user.name } },
+      });
       res.status(201).json({
         message: "Post created successfully!",
         post: post,
@@ -117,13 +123,13 @@ export default {
         error.statusCode = 422;
         throw error;
       }
-      const post = await Post.findById(postId);
+      const post = await Post.findById(postId).populate("creator", "name");
       if (!post) {
         const error = new Error("Could not find post.");
         error.statusCode = 404;
         throw error;
       }
-      if (post.creator.toString() !== req.userId) {
+      if (post.creator._id.toString() !== req.userId) {
         const error = new Error("Not authorized!");
         error.statusCode = 403;
         throw error;
@@ -136,6 +142,7 @@ export default {
       post.imageUrl = imageUrl;
       post.content = content;
       await post.save();
+      socket.getIO().emit("posts", { action: "update", post: post });
       res.status(200).json({
         message: "Post updated successfully!",
         post: post,
@@ -159,11 +166,13 @@ export default {
         error.statusCode = 403;
         throw error;
       }
+      const imageUrl = post.imageUrl;
       await post.remove();
-      clearImage(post.imageUrl);
+      clearImage(imageUrl);
       const user = await User.findById(userId);
       user.posts.pull(postId);
       await user.save();
+      socket.getIO().emit("posts", { action: "delete", post: postId });
       res.status(200).json({ message: "Deleted post." });
     } catch (error) {
       next(error);
