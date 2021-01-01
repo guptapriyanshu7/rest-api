@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
@@ -18,12 +18,12 @@ const userSchema = new Schema({
   },
   status: {
     type: String,
-    default: "I am new!",
+    default: 'I am new!',
   },
   posts: [
     {
       type: Schema.Types.ObjectId,
-      ref: "Post",
+      ref: 'Post',
     },
   ],
   resetToken: String,
@@ -35,4 +35,4 @@ const userSchema = new Schema({
   verificationToken: String,
 });
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model('User', userSchema);

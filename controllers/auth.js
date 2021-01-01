@@ -1,37 +1,40 @@
-import crypto from "crypto";
+import crypto from 'crypto';
 
-import { validationResult } from "express-validator";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import sgMail from "@sendgrid/mail";
+import { validationResult } from 'express-validator';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import sgMail from '@sendgrid/mail';
 
-import User from "../models/user.js";
+import User from '../models/user.js';
 
-sgMail.setApiKey("SENDGRID_API_KEY");
+sgMail.setApiKey('SENDGRID_API_KEY');
 
 export default {
   signup: async (req, res, next) => {
     const errors = validationResult(req);
     try {
       if (!errors.isEmpty()) {
-        const error = new Error("Validation failed");
+        const error = new Error('Validation failed');
         error.statusCode = 422;
         throw error;
       }
       const email = req.body.email;
       const dupUser = await User.findOne({ email: email });
-      if (dupUser) {
+      if (dupUser && dupUser.isVerified) {
         const error = new Error(
-          "A user with this e-mail address already exists."
+          'A user with this e-mail address already exists.'
         );
         error.statusCode = 422;
         throw error;
+      }
+      if (dupUser && !dupUser.isVerified) {
+        await dupUser.remove();
       }
       const name = req.body.name;
       const password = req.body.password;
       const hashedPassword = await bcrypt.hash(password, 12);
       const buffer = crypto.randomBytes(32);
-      const token = buffer.toString("hex");
+      const token = buffer.toString('hex');
       const user = new User({
         email: email,
         name: name,
@@ -41,13 +44,13 @@ export default {
       await user.save();
       res.status(201).json({
         message:
-          "Follow the link we have forwaded in the e-mail address provided by you to complete the verification process.",
+          'Follow the link we have forwaded in the e-mail address provided by you to complete the verification process.',
         userId: user._id,
       });
       await sgMail.send({
         to: email,
-        from: { email: "guptapriyanshu71@gmail.com", name: "Priyanshu" },
-        subject: "User Verification",
+        from: { email: 'guptapriyanshu71@gmail.com', name: 'Priyanshu' },
+        subject: 'User Verification',
         html: `
         <p>${name}, click this <a href="http://localhost:8080/auth/verify/${token}">link</a> to become a verified member now.</p>
         `,
@@ -61,24 +64,24 @@ export default {
     try {
       const user = await User.findOne({ email: email });
       if (!user) {
-        const error = new Error("A user with this email could not be found.");
+        const error = new Error('A user with this email could not be found.');
         error.statusCode = 404;
         throw error;
       }
       if (user.isVerified) {
-        res.json("User already verified.");
+        res.json('User already verified.');
       }
       await sgMail.send({
         to: email,
-        from: { email: "guptapriyanshu71@gmail.com", name: "Priyanshu" },
-        subject: "User Verification",
+        from: { email: 'guptapriyanshu71@gmail.com', name: 'Priyanshu' },
+        subject: 'User Verification',
         html: `
         <p>${user.name}, click this <a href="http://localhost:8080/auth/verify/${user.verificationToken}">link</a> to become a verified member now.</p>
         `,
       });
       res.json({
         message:
-          "Follow the link we have forwaded in the e-mail address provided by you to complete the verification process.",
+          'Follow the link we have forwaded in the e-mail address provided by you to complete the verification process.',
       });
     } catch (error) {
       next(error);
@@ -89,14 +92,14 @@ export default {
     try {
       const user = await User.findOne({ verificationToken: token });
       if (!user) {
-        const error = new Error("Could not verify.");
+        const error = new Error('Could not verify.');
         error.statusCode = 401;
         throw error;
       }
       user.isVerified = true;
       user.verificationToken = undefined;
       await user.save();
-      res.json({ message: "User verified" });
+      res.json({ message: 'User verified' });
     } catch (error) {
       next(error);
     }
@@ -107,18 +110,18 @@ export default {
     try {
       const user = await User.findOne({ email: email });
       if (!user) {
-        const error = new Error("A user with this email could not be found.");
+        const error = new Error('A user with this email could not be found.');
         error.statusCode = 401;
         throw error;
       }
       const isEqual = await bcrypt.compare(password, user.password);
       if (!isEqual) {
-        const error = new Error("Wrong password!");
+        const error = new Error('Wrong password!');
         error.statusCode = 401;
         throw error;
       }
       if (!user.isVerified) {
-        const error = new Error("E-mail not verified.");
+        const error = new Error('E-mail not verified.');
         error.statusCode = 401;
         throw error;
       }
@@ -127,8 +130,8 @@ export default {
           email: user.email,
           userId: user._id,
         },
-        "somesupersecretsecret",
-        { expiresIn: "1h" }
+        'somesupersecretsecret',
+        { expiresIn: '1h' }
       );
       res.status(200).json({ token: token, userId: user._id });
     } catch (error) {
@@ -138,21 +141,21 @@ export default {
   generatResetToken: async (req, res, next) => {
     try {
       const buffer = crypto.randomBytes(32);
-      const token = buffer.toString("hex");
+      const token = buffer.toString('hex');
       const user = await User.findOne({ email: req.body.email });
       if (!user) {
-        const error = new Error("A user with this email could not be found.");
+        const error = new Error('A user with this email could not be found.');
         error.statusCode = 404;
         throw error;
       }
       user.resetToken = token;
       user.resetTokenExpiration = Date.now() + 3600000;
       await user.save();
-      res.json({ message: "An email has been sent to you." });
+      res.json({ message: 'An email has been sent to you.' });
       await sgMail.send({
         to: req.body.email,
-        from: { email: "guptapriyanshu71@gmail.com", name: "Priyanshu" },
-        subject: "Password reset",
+        from: { email: 'guptapriyanshu71@gmail.com', name: 'Priyanshu' },
+        subject: 'Password reset',
         html: `
         <h1>You requested a password reset</h1>
         <p>Click this <a href="http://localhost:8080/auth/reset/${token}">link</a> to set a new password.</p>
@@ -167,18 +170,18 @@ export default {
     try {
       const user = await User.findOne({ resetToken: token });
       if (!user) {
-        const error = new Error("Could not verify you.");
+        const error = new Error('Could not verify you.');
         error.statusCode = 401;
         throw error;
       }
       if (user.resetTokenExpiration < Date.now()) {
         user.resetToken = undefined;
         user.resetTokenExpiration = undefined;
-        const error = new Error("Reset token expired.");
+        const error = new Error('Reset token expired.');
         error.statusCode = 401;
         throw error;
       }
-      res.json({ message: "User verified, change password.", token: token });
+      res.json({ message: 'User verified, change password.', token: token });
     } catch (error) {
       next(error);
     }
@@ -189,14 +192,14 @@ export default {
     try {
       const user = await User.findOne({ resetToken: token });
       if (!user) {
-        const error = new Error("Could not verify you.");
+        const error = new Error('Could not verify you.');
         error.statusCode = 401;
         throw error;
       }
       if (user.resetTokenExpiration < Date.now()) {
         user.resetToken = undefined;
         user.resetTokenExpiration = undefined;
-        const error = new Error("Reset token expired.");
+        const error = new Error('Reset token expired.');
         error.statusCode = 401;
         throw error;
       }
@@ -205,7 +208,7 @@ export default {
       user.resetToken = undefined;
       user.resetTokenExpiration = undefined;
       await user.save();
-      res.json({ message: "Password changed successfully." });
+      res.json({ message: 'Password changed successfully.' });
     } catch (error) {
       next(error);
     }
@@ -214,7 +217,7 @@ export default {
     try {
       const user = await User.findById(req.userId);
       if (!user) {
-        const error = new Error("User not found.");
+        const error = new Error('User not found.');
         error.statusCode = 404;
         throw error;
       }
@@ -228,13 +231,13 @@ export default {
     try {
       const user = await User.findById(req.userId);
       if (!user) {
-        const error = new Error("User not found.");
+        const error = new Error('User not found.');
         error.statusCode = 404;
         throw error;
       }
       user.status = newStatus;
       await user.save();
-      res.status(200).json({ message: "User status updated." });
+      res.status(200).json({ message: 'User status updated.' });
     } catch (error) {
       next(error);
     }
