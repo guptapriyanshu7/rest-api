@@ -114,14 +114,14 @@ export default {
         error.statusCode = 401;
         throw error;
       }
-      const isEqual = await bcrypt.compare(password, user.password);
-      if (!isEqual) {
-        const error = new Error('Wrong password!');
+      if (!user.isVerified) {
+        const error = new Error('E-mail not verified.');
         error.statusCode = 401;
         throw error;
       }
-      if (!user.isVerified) {
-        const error = new Error('E-mail not verified.');
+      const isEqual = await bcrypt.compare(password, user.password);
+      if (!isEqual) {
+        const error = new Error('Wrong password!');
         error.statusCode = 401;
         throw error;
       }
@@ -135,7 +135,11 @@ export default {
       );
       res.status(200).json({ token: token, userId: user._id });
     } catch (error) {
+      if (!error.statusCode) {
+        error.statusCode = 500;
+      }
       next(error);
+      return error;
     }
   },
   generatResetToken: async (req, res, next) => {
