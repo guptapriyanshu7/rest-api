@@ -10,8 +10,10 @@ import User from '../models/user.js';
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 let url = 'http://localhost:8080';
-if (process.env.NODE_ENV == 'production') {
+let redirectUrl = 'http://localhost:3000';
+if (process.env.NODE_ENV === 'production') {
   url = 'https://priyanshu-post-node.herokuapp.com';
+  redirectUrl = 'https://postnode-react.herokuapp.com';
 }
 
 export default {
@@ -48,8 +50,7 @@ export default {
       });
       await user.save();
       res.status(201).json({
-        message:
-          'Follow the link we have forwaded in the e-mail address provided by you to complete the verification process.',
+        message: 'Check inbox to verify your e-mail.',
         userId: user._id,
       });
       await sgMail.send({
@@ -104,7 +105,7 @@ export default {
       user.isVerified = true;
       user.verificationToken = undefined;
       await user.save();
-      res.json({ message: 'User verified' });
+      res.send(`<h1>Verified</h1><p>Goto <a href=${redirectUrl}>Login</a></p>`);
     } catch (error) {
       next(error);
     }
