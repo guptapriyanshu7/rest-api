@@ -1,5 +1,6 @@
 import path from 'path';
 
+import 'dotenv/config.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import multer from 'multer';
@@ -8,18 +9,16 @@ import feedRoutes from './routes/feed.js';
 import authRoutes from './routes/auth.js';
 import socket from './utils/socket.js';
 
-(async () => {
-  try {
-    await mongoose.connect('mongodb://localhost/rest-api', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true,
-    });
-    console.log('Database connection successful !!!');
-  } catch (error) {
-    console.log(error);
-  }
-})();
+try {
+  await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  });
+  console.log('Database connection successful !!!');
+} catch (error) {
+  console.log(error);
+}
 
 const app = express();
 const router = express.Router();
@@ -75,7 +74,7 @@ app.use((error, req, res, next) => {
 app.use('/feed', feedRoutes(router));
 app.use('/auth', authRoutes(router));
 
-const server = app.listen(8080, () => {
+const server = app.listen(process.env.PORT, () => {
   console.log('http://localhost:8080');
 });
 

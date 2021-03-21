@@ -7,7 +7,7 @@ import sgMail from '@sendgrid/mail';
 
 import User from '../models/user.js';
 
-sgMail.setApiKey('SENDGRID_API_KEY');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export default {
   signup: async (req, res, next) => {
