@@ -75,7 +75,7 @@ app.use('/feed', feedRoutes(router));
 app.use('/auth', authRoutes(router));
 
 const server = app.listen(process.env.PORT, () => {
-  console.log('http://localhost:8080');
+  console.log(`Server running at port: ${process.env.PORT}`);
 });
 
 const io = socket.init(server);

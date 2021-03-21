@@ -9,6 +9,11 @@ import User from '../models/user.js';
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+let url = 'http://localhost:8080';
+if (process.env.NODE_ENV == 'production') {
+  url = 'https://priyanshu-post-node.herokuapp.com';
+}
+
 export default {
   signup: async (req, res, next) => {
     const errors = validationResult(req);
@@ -52,7 +57,7 @@ export default {
         from: { email: 'guptapriyanshu71@gmail.com', name: 'Priyanshu' },
         subject: 'User Verification',
         html: `
-        <p>${name}, click this <a href="http://localhost:8080/auth/verify/${token}">link</a> to become a verified member now.</p>
+        <p>${name}, click this <a href="${url}/auth/verify/${token}">link</a> to become a verified member now.</p>
         `,
       });
     } catch (error) {
@@ -76,7 +81,7 @@ export default {
         from: { email: 'guptapriyanshu71@gmail.com', name: 'Priyanshu' },
         subject: 'User Verification',
         html: `
-        <p>${user.name}, click this <a href="http://localhost:8080/auth/verify/${user.verificationToken}">link</a> to become a verified member now.</p>
+        <p>${user.name}, click this <a href="${url}/auth/verify/${user.verificationToken}">link</a> to become a verified member now.</p>
         `,
       });
       res.json({
@@ -162,7 +167,7 @@ export default {
         subject: 'Password reset',
         html: `
         <h1>You requested a password reset</h1>
-        <p>Click this <a href="http://localhost:8080/auth/reset/${token}">link</a> to set a new password.</p>
+        <p>Click this <a href="${url}/auth/reset/${token}">link</a> to set a new password.</p>
         `,
       });
     } catch (error) {
