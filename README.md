@@ -1,4 +1,4 @@
-# PostNode GraphQL Server
+# PostNode Server
 
 [![GitHub issues](https://img.shields.io/github/issues/guptapriyanshu7/rest-api?style=for-the-badge)](https://github.com/guptapriyanshu7/rest-api/issues)
 [![GitHub stars](https://img.shields.io/github/stars/guptapriyanshu7/rest-api?style=for-the-badge)](https://github.com/guptapriyanshu7/rest-api/stargazers)
